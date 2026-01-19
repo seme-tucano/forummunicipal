@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTENTICAÇÃO E USUÁRIOS
+// ============================================
+
+enum Role {
+  ADMIN     // Acesso total
+  EDITOR    // Criar e editar conteúdo próprio
+  REVIEWER  // Revisar e aprovar conteúdo
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          Role      @default(EDITOR)
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relações
+  posts         Post[]
+  documents     Document[]
+  auditLogs     AuditLog[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ============================================
+// CONTEÚDO - NOTÍCIAS/POSTS
+// ============================================
+
+enum PostStatus {
+  DRAFT       // Rascunho
+  REVIEW      // Aguardando revisão
+  PUBLISHED   // Publicado
+  ARCHIVED    // Arquivado
+}
+
+model Post {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  excerpt     String      @db.Text
+  content     String      @db.Text
+  coverImage  String?
+  status      PostStatus  @default(DRAFT)
+  views       Int         @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relações
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id])
+  categoryId  String?
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  tags        PostTag[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+  @@map("posts")
+}
+
+// ============================================
+// ORGANIZAÇÃO - CATEGORIAS E TAGS
+// ============================================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+
+  // Relações
+  posts       Post[]
+  documents   Document[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  slug  String    @unique
+
+  // Relações
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  postId String
+  tagId  String
+
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+// ============================================
+// DOCUMENTOS/ARQUIVOS
+// ============================================
+
+enum DocumentType {
+  ATA
+  RESOLUCAO
+  EDITAL
+  PARECER
+  RELATORIO
+  PLANILHA
+  OUTRO
+}
+
+model Document {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?      @db.Text
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  mimeType     String
+  type         DocumentType
+  year         Int?
+  version      Int          @default(1)
+  downloads    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relações
+  uploadedById String
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+  categoryId   String?
+  category     Category?    @relation(fields: [categoryId], references: [id])
+
+  @@index([type])
+  @@index([year])
+  @@map("documents")
+}
+
+// ============================================
+// GALERIA DE IMAGENS
+// ============================================
+
+model Album {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String?
+  coverImage  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relações
+  images      GalleryImage[]
+
+  @@map("albums")
+}
+
+model GalleryImage {
+  id           String   @id @default(cuid())
+  title        String?
+  description  String?
+  imageUrl     String
+  thumbnailUrl String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  // Relações
+  albumId      String?
+  album        Album?   @relation(fields: [albumId], references: [id], onDelete: SetNull)
+
+  @@index([albumId])
+  @@map("gallery_images")
+}
+
+// ============================================
+// EVENTOS/AGENDA
+// ============================================
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  description String    @db.Text
+  location    String?
+  address     String?
+  startDate   DateTime
+  endDate     DateTime?
+  published   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([startDate])
+  @@index([published])
+  @@map("events")
+}
+
+// ============================================
+// CONFIGURAÇÕES DO SITE
+// ============================================
+
+model SiteSettings {
+  id           String   @id @default("main")
+  siteName     String   @default("Fórum Municipal da Educação")
+  description  String?
+  logo         String?
+  favicon      String?
+  socialLinks  Json?    // {facebook, instagram, youtube}
+  contactEmail String?
+  address      String?
+  phone        String?
+  updatedAt    DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ============================================
+// AUDITORIA
+// ============================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // CREATE, UPDATE, DELETE, LOGIN, etc
+  entity    String   // Post, Document, User, etc
+  entityId  String?
+  details   Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  // Relações
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================
+// CONTATO/MENSAGENS
+// ============================================
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([read])
+  @@index([createdAt])
+  @@map("contact_messages")
+}
