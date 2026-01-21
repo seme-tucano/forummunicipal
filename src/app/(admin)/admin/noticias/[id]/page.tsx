@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -10,13 +10,7 @@ import {
   Send,
   Trash2,
   ImagePlus,
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
-  Link as LinkIcon,
-  Quote,
-  Heading2
+  Loader2
 } from 'lucide-react'
 import { AdminHeader } from '@/components/admin'
 import { Button } from '@/components/ui/button'
@@ -24,19 +18,11 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 
-// Mock data
-const mockPost = {
-  id: '1',
-  title: 'Fórum aprova novas diretrizes para o Plano Municipal de Educação',
-  slug: 'forum-aprova-novas-diretrizes-pme',
-  excerpt: 'Em reunião extraordinária realizada nesta semana, foram definidas as metas prioritárias para os próximos dois anos com foco na educação infantil e inclusão.',
-  content: '<p>O Fórum Municipal da Educação realizou nesta quinta-feira (15) uma reunião extraordinária para discutir e aprovar as novas diretrizes do Plano Municipal de Educação (PME) para o biênio 2026-2028.</p>',
-  coverImage: null,
-  status: 'PUBLISHED',
-  category: 'institucional',
-  tags: ['PME', 'Diretrizes'],
+interface Category {
+  id: string
+  name: string
+  slug: string
 }
 
 export default function EditNoticiaPage({ params }: { params: Promise<{ id: string }> }) {
@@ -44,21 +30,64 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
   const router = useRouter()
   const isNew = id === 'nova'
 
+  const [loading, setLoading] = useState(!isNew)
+  const [saving, setSaving] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
-    title: isNew ? '' : mockPost.title,
-    slug: isNew ? '' : mockPost.slug,
-    excerpt: isNew ? '' : mockPost.excerpt,
-    content: isNew ? '' : mockPost.content,
-    category: isNew ? '' : mockPost.category,
-    tags: isNew ? '' : mockPost.tags.join(', '),
-    status: isNew ? 'DRAFT' : mockPost.status,
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    categoryId: '',
+    status: 'DRAFT',
   })
+
+  useEffect(() => {
+    fetchCategories()
+    if (!isNew) {
+      fetchPost()
+    }
+  }, [id, isNew])
+
+  async function fetchCategories() {
+    try {
+      const res = await fetch('/api/categories')
+      const data = await res.json()
+      if (data.success) {
+        setCategories(data.data)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error)
+    }
+  }
+
+  async function fetchPost() {
+    try {
+      const res = await fetch(`/api/posts/${id}`)
+      const data = await res.json()
+      if (data.success) {
+        const post = data.data
+        setFormData({
+          title: post.title,
+          slug: post.slug,
+          excerpt: post.excerpt || '',
+          content: post.content || '',
+          categoryId: post.categoryId || '',
+          status: post.status,
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao buscar post:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
 
-    // Auto-generate slug from title
+    // Auto-generate slug from title for new posts
     if (name === 'title' && isNew) {
       const slug = value
         .toLowerCase()
@@ -72,16 +101,76 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
     }
   }
 
-  const handleSave = (status?: string) => {
-    console.log('Saving:', { ...formData, status: status || formData.status })
-    // API call would go here
+  const handleSave = async (status?: string) => {
+    setSaving(true)
+    const finalStatus = status || formData.status
+
+    try {
+      const payload = {
+        title: formData.title,
+        slug: formData.slug,
+        excerpt: formData.excerpt,
+        content: formData.content,
+        categoryId: formData.categoryId || null,
+        status: finalStatus,
+        publishedAt: finalStatus === 'PUBLISHED' ? new Date().toISOString() : null,
+      }
+
+      const url = isNew ? '/api/posts' : `/api/posts/${id}`
+      const method = isNew ? 'POST' : 'PUT'
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        router.push('/admin/noticias')
+        router.refresh()
+      } else {
+        alert(data.error || 'Erro ao salvar')
+      }
+    } catch (error) {
+      console.error('Erro ao salvar:', error)
+      alert('Erro ao salvar notícia')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja excluir esta notícia?')) return
+
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        router.push('/admin/noticias')
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Erro ao excluir:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+      </div>
+    )
   }
 
   return (
     <>
       <AdminHeader
         title={isNew ? 'Nova Notícia' : 'Editar Notícia'}
-        description={isNew ? 'Crie uma nova publicação' : `Editando: ${mockPost.title.substring(0, 50)}...`}
+        description={isNew ? 'Crie uma nova publicação' : `Editando: ${formData.title.substring(0, 50)}...`}
       />
 
       <div className="p-6">
@@ -159,43 +248,14 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
                 <CardTitle className="text-base">Conteúdo</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                {/* Toolbar */}
-                <div className="flex flex-wrap gap-1 p-2 border rounded-t-md bg-gray-50">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Bold className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Italic className="h-4 w-4" />
-                  </Button>
-                  <Separator orientation="vertical" className="h-8 mx-1" />
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Heading2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <List className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <ListOrdered className="h-4 w-4" />
-                  </Button>
-                  <Separator orientation="vertical" className="h-8 mx-1" />
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Quote className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <LinkIcon className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <ImagePlus className="h-4 w-4" />
-                  </Button>
-                </div>
                 <Textarea
                   id="content"
                   name="content"
                   value={formData.content}
                   onChange={handleChange}
-                  placeholder="Escreva o conteúdo da notícia..."
+                  placeholder="Escreva o conteúdo da notícia (pode usar HTML)..."
                   rows={15}
-                  className="rounded-t-none border-t-0 font-mono text-sm"
+                  className="font-mono text-sm"
                 />
               </CardContent>
             </Card>
@@ -225,23 +285,26 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
                   variant="outline"
                   className="w-full justify-start"
                   onClick={() => handleSave('DRAFT')}
+                  disabled={saving}
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                   Salvar rascunho
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full justify-start"
                   onClick={() => handleSave('REVIEW')}
+                  disabled={saving}
                 >
-                  <Send className="h-4 w-4 mr-2" />
+                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                   Enviar para revisão
                 </Button>
                 <Button
                   className="w-full justify-start"
                   onClick={() => handleSave('PUBLISHED')}
+                  disabled={saving}
                 >
-                  <Eye className="h-4 w-4 mr-2" />
+                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
                   Publicar agora
                 </Button>
               </CardContent>
@@ -265,43 +328,28 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
               </CardContent>
             </Card>
 
-            {/* Category & Tags */}
+            {/* Category */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Organização</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
                 <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
                     Categoria
                   </label>
                   <select
-                    id="category"
-                    name="category"
-                    value={formData.category}
+                    id="categoryId"
+                    name="categoryId"
+                    value={formData.categoryId}
                     onChange={handleChange}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
                     <option value="">Selecione...</option>
-                    <option value="institucional">Institucional</option>
-                    <option value="eventos">Eventos</option>
-                    <option value="documentos">Documentos</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </select>
-                </div>
-                <div>
-                  <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags
-                  </label>
-                  <Input
-                    id="tags"
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleChange}
-                    placeholder="PME, Educação, Conferência"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Separe as tags por vírgula
-                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -313,8 +361,10 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
                   <Button
                     variant="outline"
                     className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                    onClick={handleDelete}
+                    disabled={saving}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
                     Excluir notícia
                   </Button>
                 </CardContent>
