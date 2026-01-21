@@ -1,7 +1,7 @@
 # Estado da Sessão - Forum Municipal da Educação
 
-**Última atualização:** 2026-01-21
-**Último commit:** 27f6ed3 - Implementa sistema completo de APIs REST e autenticação
+**Última atualização:** 2026-01-21 (Sessão 2)
+**Último commit:** 42b0fad - Adiciona seed do banco e dependência tsx
 
 ## O QUE JÁ FOI FEITO
 
@@ -50,8 +50,8 @@
 ## O QUE FALTA FAZER
 
 ### Prioridade Alta
-- [ ] Criar seed do banco com dados de exemplo
-- [ ] Testar fluxo completo de login → dashboard
+- [x] Criar seed do banco com dados de exemplo ✅
+- [x] Testar fluxo completo de login → dashboard ✅
 - [ ] Implementar logout funcional
 - [ ] Conectar páginas admin aos dados reais (usar hooks)
 
@@ -93,18 +93,24 @@ npx prisma db seed
 
 ## CREDENCIAIS DE TESTE
 
-Ainda não há usuário seed. Criar com:
-```sql
--- Senha: admin123 (hash bcrypt)
-INSERT INTO "User" (id, email, "passwordHash", name, role, active)
-VALUES (
-  gen_random_uuid(),
-  'admin@forum.gov.br',
-  '$2a$10$...',  -- gerar hash de 'admin123'
-  'Administrador',
-  'ADMIN',
-  true
-);
+**Admin:**
+- Email: `admin@forum.gov.br`
+- Senha: `admin123`
+
+Seed executado via: `npx prisma db seed`
+
+## CONEXÃO COM VPS (BANCO DE DADOS)
+
+O banco PostgreSQL está no Coolify (VPS Hetzner):
+- **IP VPS:** 178.156.218.152
+- **Usuário SSH:** mkdls
+- **Chave:** pvHETZER_dec.pem (na pasta forum)
+- **Senha sudo:** 153640
+- **Container DB:** do8g4gw004c0gksgw04w04s0 (IP interno: 10.0.1.7)
+
+**Criar túnel SSH:**
+```bash
+ssh -f -N -L 5433:10.0.1.7:5432 mkdls@178.156.218.152 -i pvHETZER_dec.pem
 ```
 
 ## NOTAS IMPORTANTES
@@ -113,3 +119,4 @@ VALUES (
 2. ESLint 9 com flat config
 3. Arquivos sensíveis no .gitignore: *.pem, *.ppk, hertz
 4. O projeto pai (/home/mkdls) tem node_modules que conflitava com ESLint - resolvido com outputFileTracingRoot
+5. Banco de dados na VPS Coolify via túnel SSH na porta 5433
