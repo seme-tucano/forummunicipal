@@ -1,7 +1,7 @@
 # Estado da Sessão - Forum Municipal da Educação
 
 **Última atualização:** 2026-01-21 (Sessão 3)
-**Último commit:** 59896e3 - Conecta páginas admin restantes com APIs reais
+**Último commit:** 94e181c - Conecta página de categorias e tags com API real
 
 ## O QUE JÁ FOI FEITO
 
@@ -36,7 +36,7 @@
 - [x] Dashboard admin (estatísticas)
 - [x] Admin - Listagem de notícias (API real)
 - [x] Admin - Editor de notícia (`/admin/noticias/[id]`) (API real)
-- [x] Admin - Listagem de categorias
+- [x] Admin - Listagem de categorias (API real + CRUD completo)
 - [x] Admin - Listagem de eventos (API real + CRUD completo)
 - [x] Admin - Listagem de documentos (API real + Upload)
 - [x] Admin - Listagem de galeria (API real + Upload imagens)
@@ -58,7 +58,6 @@
 - [ ] Deploy na VPS Coolify
 
 ### Prioridade Média
-- [ ] Admin - Modal de criar nova categoria (página ainda com dados mock)
 - [ ] Implementar paginação nas listagens
 - [ ] Implementar busca/filtros avançados
 
@@ -111,10 +110,10 @@ ssh -f -N -L 5433:10.0.1.7:5432 mkdls@178.156.218.152 -i pvHETZER_dec.pem
 
 ## COMMITS RECENTES
 
+- `94e181c` - Conecta página de categorias e tags com API real
 - `59896e3` - Conecta páginas admin restantes com APIs reais
 - `4183cee` - Conecta páginas de notícias com API real e corrige middleware
 - `07c8f9b` - Atualiza estado da sessão com progresso e credenciais
-- `42b0fad` - Adiciona seed do banco e dependência tsx
 
 ## NOTAS IMPORTANTES
 
