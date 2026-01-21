@@ -1,21 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { DocumentType } from '@prisma/client'
+import { requireEditor } from '@/lib/api-auth'
+import { documentCreateSchema, documentsQuerySchema } from '@/lib/validations'
+import { logCreate } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const type = searchParams.get('type') as DocumentType | null
-    const year = searchParams.get('year')
-    const search = searchParams.get('search')
+
+    const queryResult = documentsQuerySchema.safeParse({
+      page: searchParams.get('page'),
+      limit: searchParams.get('limit'),
+      type: searchParams.get('type'),
+      year: searchParams.get('year'),
+      search: searchParams.get('search'),
+    })
+
+    const { page, limit, type, year, search } = queryResult.success
+      ? queryResult.data
+      : { page: 1, limit: 10, type: undefined, year: undefined, search: undefined }
 
     const skip = (page - 1) * limit
 
     const where = {
-      ...(type && { type }),
-      ...(year && { year: parseInt(year) }),
+      ...(type && { type: type as DocumentType }),
+      ...(year && { year }),
       ...(search && {
         OR: [
           { title: { contains: search, mode: 'insensitive' as const } },
@@ -61,7 +71,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar autenticação
+    const auth = await requireEditor()
+    if (!auth.authorized) {
+      return auth.response
+    }
+
     const body = await request.json()
+
+    // Validar dados
+    const validationResult = documentCreateSchema.safeParse(body)
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Dados inválidos',
+          errors: validationResult.error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      )
+    }
+
     const {
       title,
       description,
@@ -72,8 +102,7 @@ export async function POST(request: NextRequest) {
       type,
       year,
       categoryId,
-      uploadedById,
-    } = body
+    } = validationResult.data
 
     const document = await prisma.document.create({
       data: {
@@ -86,7 +115,7 @@ export async function POST(request: NextRequest) {
         type,
         year,
         categoryId,
-        uploadedById,
+        uploadedById: auth.session.user.id,
       },
       include: {
         uploadedBy: { select: { id: true, name: true } },
@@ -95,20 +124,15 @@ export async function POST(request: NextRequest) {
     })
 
     // Log de auditoria
-    await prisma.auditLog.create({
-      data: {
-        action: 'CREATE',
-        entity: 'Document',
-        entityId: document.id,
-        userId: uploadedById,
-        details: { title: document.title, fileName: document.fileName },
-      },
+    await logCreate('Document', document.id, auth.session.user.id, {
+      title: document.title,
+      fileName: document.fileName,
     })
 
-    return NextResponse.json({
-      success: true,
-      data: document,
-    })
+    return NextResponse.json(
+      { success: true, data: document },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('Error creating document:', error)
     return NextResponse.json(

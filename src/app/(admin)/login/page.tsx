@@ -151,16 +151,10 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Demo credentials */}
-            <div className="mt-8 p-4 rounded-lg bg-gray-50 text-sm">
-              <p className="font-medium text-gray-700 mb-2">Credenciais de demonstração:</p>
-              <p className="text-gray-600">
-                <strong>Admin:</strong> admin@fme.edu.br / admin123
-              </p>
-              <p className="text-gray-600">
-                <strong>Editor:</strong> editor@fme.edu.br / editor123
-              </p>
-            </div>
+            {/* Help text */}
+            <p className="mt-6 text-center text-sm text-gray-500">
+              Problemas para acessar? Entre em contato com o administrador.
+            </p>
           </CardContent>
         </Card>
 

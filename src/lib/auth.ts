@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs'
 import prisma from '@/lib/prisma'
 import type { Role } from '@prisma/client'
 
+// Mensagem genérica para evitar enumeração de usuários
+const INVALID_CREDENTIALS_ERROR = 'Credenciais inválidas'
+
 declare module 'next-auth' {
   interface Session {
     user: {
@@ -11,6 +14,7 @@ declare module 'next-auth' {
       email: string
       name: string
       role: Role
+      active: boolean
     }
   }
 
@@ -19,6 +23,7 @@ declare module 'next-auth' {
     email: string
     name: string
     role: Role
+    active: boolean
   }
 }
 
@@ -28,6 +33,7 @@ declare module 'next-auth/jwt' {
     email: string
     name: string
     role: Role
+    active: boolean
   }
 }
 
@@ -40,47 +46,63 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Senha', type: 'password' },
       },
       async authorize(credentials) {
+        // Validação básica
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email e senha são obrigatórios')
+          throw new Error(INVALID_CREDENTIALS_ERROR)
         }
 
+        // Normalizar email
+        const email = credentials.email.toLowerCase().trim()
+
+        // Buscar usuário
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         })
 
+        // Usuário não encontrado - mesma mensagem genérica
         if (!user) {
-          throw new Error('Usuário não encontrado')
+          // Delay para prevenir timing attacks
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          throw new Error(INVALID_CREDENTIALS_ERROR)
         }
 
+        // Usuário inativo - mesma mensagem genérica
         if (!user.active) {
-          throw new Error('Usuário inativo')
+          throw new Error(INVALID_CREDENTIALS_ERROR)
         }
 
+        // Verificar senha
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.passwordHash
         )
 
         if (!isPasswordValid) {
-          throw new Error('Senha incorreta')
+          throw new Error(INVALID_CREDENTIALS_ERROR)
         }
 
-        // Log de auditoria
-        await prisma.auditLog.create({
-          data: {
-            action: 'LOGIN',
-            entity: 'User',
-            entityId: user.id,
-            userId: user.id,
-            details: { email: user.email },
-          },
-        })
+        // Log de auditoria com IP (será capturado pelo middleware)
+        try {
+          await prisma.auditLog.create({
+            data: {
+              action: 'LOGIN',
+              entity: 'User',
+              entityId: user.id,
+              userId: user.id,
+              details: { email: user.email },
+            },
+          })
+        } catch {
+          // Não falhar login se log falhar
+          console.error('Erro ao registrar log de login')
+        }
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          active: user.active,
         }
       },
     }),
@@ -92,6 +114,7 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email
         token.name = user.name
         token.role = user.role
+        token.active = user.active
       }
       return token
     },
@@ -102,6 +125,7 @@ export const authOptions: NextAuthOptions = {
           email: token.email,
           name: token.name,
           role: token.role,
+          active: token.active,
         }
       }
       return session
@@ -113,7 +137,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 4 * 60 * 60, // 4 horas (mais seguro que 24h)
   },
   secret: process.env.NEXTAUTH_SECRET,
 }

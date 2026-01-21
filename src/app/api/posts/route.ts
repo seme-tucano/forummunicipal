@@ -1,20 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { PostStatus } from '@prisma/client'
+import { requireEditor } from '@/lib/api-auth'
+import { postCreateSchema, postsQuerySchema } from '@/lib/validations'
+import { logCreate } from '@/lib/audit'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const category = searchParams.get('category')
-    const status = searchParams.get('status') as PostStatus | null
-    const search = searchParams.get('search')
+
+    // Validar query params
+    const queryResult = postsQuerySchema.safeParse({
+      page: searchParams.get('page'),
+      limit: searchParams.get('limit'),
+      status: searchParams.get('status'),
+      category: searchParams.get('category'),
+      search: searchParams.get('search'),
+    })
+
+    const { page, limit, status, category, search } = queryResult.success
+      ? queryResult.data
+      : { page: 1, limit: 10, status: undefined, category: undefined, search: undefined }
 
     const skip = (page - 1) * limit
 
     const where = {
-      ...(status ? { status } : { status: PostStatus.PUBLISHED }),
+      ...(status ? { status: status as PostStatus } : { status: PostStatus.PUBLISHED }),
       ...(category && { category: { slug: category } }),
       ...(search && {
         OR: [
@@ -69,8 +80,37 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar autenticação - apenas ADMIN e EDITOR podem criar posts
+    const auth = await requireEditor()
+    if (!auth.authorized) {
+      return auth.response
+    }
+
     const body = await request.json()
-    const { title, slug, excerpt, content, coverImage, categoryId, tags, authorId } = body
+
+    // Validar dados de entrada
+    const validationResult = postCreateSchema.safeParse(body)
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Dados inválidos',
+          errors: validationResult.error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      )
+    }
+
+    const { title, slug, excerpt, content, coverImage, categoryId, tags, status } = validationResult.data
+
+    // Verificar se slug já existe
+    const existingPost = await prisma.post.findUnique({ where: { slug } })
+    if (existingPost) {
+      return NextResponse.json(
+        { success: false, error: 'Já existe uma notícia com este slug' },
+        { status: 409 }
+      )
+    }
 
     const post = await prisma.post.create({
       data: {
@@ -80,8 +120,9 @@ export async function POST(request: NextRequest) {
         content,
         coverImage,
         categoryId,
-        authorId,
-        status: PostStatus.DRAFT,
+        authorId: auth.session.user.id,
+        status: status || PostStatus.DRAFT,
+        publishedAt: status === 'PUBLISHED' ? new Date() : null,
         tags: tags?.length
           ? {
               create: tags.map((tagId: string) => ({
@@ -98,23 +139,18 @@ export async function POST(request: NextRequest) {
     })
 
     // Log de auditoria
-    await prisma.auditLog.create({
-      data: {
-        action: 'CREATE',
-        entity: 'Post',
-        entityId: post.id,
-        userId: authorId,
-        details: { title: post.title },
-      },
-    })
+    await logCreate('Post', post.id, auth.session.user.id, { title: post.title })
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...post,
-        tags: post.tags.map((pt) => pt.tag),
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          ...post,
+          tags: post.tags.map((pt) => pt.tag),
+        },
       },
-    })
+      { status: 201 }
+    )
   } catch (error) {
     console.error('Error creating post:', error)
     return NextResponse.json(

@@ -1,107 +1,24 @@
+'use client'
+
 import Link from 'next/link'
 import {
   Newspaper,
   FileText,
   Images,
   Calendar,
-  Users,
-  TrendingUp,
   Eye,
   Download,
-  ArrowUpRight,
-  ArrowDownRight
+  TrendingUp,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import { AdminHeader } from '@/components/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-
-const stats = [
-  {
-    name: 'Notícias Publicadas',
-    value: '24',
-    change: '+3',
-    changeType: 'positive',
-    icon: Newspaper,
-    href: '/admin/noticias',
-  },
-  {
-    name: 'Documentos',
-    value: '45',
-    change: '+7',
-    changeType: 'positive',
-    icon: FileText,
-    href: '/admin/documentos',
-  },
-  {
-    name: 'Fotos na Galeria',
-    value: '259',
-    change: '+28',
-    changeType: 'positive',
-    icon: Images,
-    href: '/admin/galeria',
-  },
-  {
-    name: 'Eventos Agendados',
-    value: '4',
-    change: '0',
-    changeType: 'neutral',
-    icon: Calendar,
-    href: '/admin/eventos',
-  },
-]
-
-const recentPosts = [
-  {
-    id: '1',
-    title: 'Fórum aprova novas diretrizes para o PME',
-    status: 'PUBLISHED',
-    date: '15 Jan 2026',
-    views: 234,
-  },
-  {
-    id: '2',
-    title: 'Inscrições abertas para a Conferência Municipal',
-    status: 'PUBLISHED',
-    date: '12 Jan 2026',
-    views: 189,
-  },
-  {
-    id: '3',
-    title: 'Relatório de acompanhamento das metas do PME',
-    status: 'REVIEW',
-    date: '10 Jan 2026',
-    views: 0,
-  },
-  {
-    id: '4',
-    title: 'Audiência pública sobre educação inclusiva',
-    status: 'DRAFT',
-    date: '08 Jan 2026',
-    views: 0,
-  },
-]
-
-const recentDocuments = [
-  {
-    id: '1',
-    title: 'Ata da Reunião Ordinária - Janeiro/2026',
-    type: 'ATA',
-    downloads: 45,
-  },
-  {
-    id: '2',
-    title: 'Resolução nº 01/2026 - Diretrizes do PME',
-    type: 'RESOLUCAO',
-    downloads: 32,
-  },
-  {
-    id: '3',
-    title: 'Edital de Convocação - Conferência 2026',
-    type: 'EDITAL',
-    downloads: 67,
-  },
-]
+import { useStats } from '@/hooks'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -116,18 +33,79 @@ function getStatusBadge(status: string) {
   }
 }
 
+function formatDate(date: string) {
+  return formatDistanceToNow(new Date(date), { addSuffix: true, locale: ptBR })
+}
+
 export default function AdminDashboard() {
+  const { stats, loading, error, refetch } = useStats()
+
+  if (loading) {
+    return (
+      <>
+        <AdminHeader title="Dashboard" description="Visão geral do portal" />
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+        </div>
+      </>
+    )
+  }
+
+  if (error || !stats) {
+    return (
+      <>
+        <AdminHeader title="Dashboard" description="Visão geral do portal" />
+        <div className="p-6">
+          <Card className="p-8 text-center">
+            <p className="text-gray-500 mb-4">{error || 'Erro ao carregar dados'}</p>
+            <Button onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Tentar novamente
+            </Button>
+          </Card>
+        </div>
+      </>
+    )
+  }
+
+  const statsCards = [
+    {
+      name: 'Notícias Publicadas',
+      value: stats.posts.published,
+      total: stats.posts.total,
+      icon: Newspaper,
+      href: '/admin/noticias',
+    },
+    {
+      name: 'Documentos',
+      value: stats.documents.total,
+      icon: FileText,
+      href: '/admin/documentos',
+    },
+    {
+      name: 'Fotos na Galeria',
+      value: stats.gallery.images,
+      albums: stats.gallery.albums,
+      icon: Images,
+      href: '/admin/galeria',
+    },
+    {
+      name: 'Eventos',
+      value: stats.events.upcoming,
+      total: stats.events.total,
+      icon: Calendar,
+      href: '/admin/eventos',
+    },
+  ]
+
   return (
     <>
-      <AdminHeader
-        title="Dashboard"
-        description="Visão geral do portal"
-      />
+      <AdminHeader title="Dashboard" description="Visão geral do portal" />
 
       <div className="p-6">
         {/* Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat) => (
+          {statsCards.map((stat) => (
             <Link key={stat.name} href={stat.href}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-6">
@@ -135,24 +113,18 @@ export default function AdminDashboard() {
                     <div className="h-10 w-10 rounded-lg bg-primary-100 flex items-center justify-center">
                       <stat.icon className="h-5 w-5 text-primary-600" />
                     </div>
-                    {stat.changeType !== 'neutral' && (
-                      <div className={`flex items-center text-sm ${
-                        stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {stat.changeType === 'positive' ? (
-                          <ArrowUpRight className="h-4 w-4" />
-                        ) : (
-                          <ArrowDownRight className="h-4 w-4" />
-                        )}
-                        {stat.change}
-                      </div>
-                    )}
                   </div>
                   <div className="text-2xl font-bold text-gray-900 mb-1">
                     {stat.value}
                   </div>
                   <div className="text-sm text-gray-500">
                     {stat.name}
+                    {stat.total !== undefined && stat.total !== stat.value && (
+                      <span className="text-gray-400"> / {stat.total} total</span>
+                    )}
+                    {stat.albums !== undefined && (
+                      <span className="text-gray-400"> em {stat.albums} álbuns</span>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -163,19 +135,19 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-3 mb-8">
           <Button asChild>
-            <Link href="/admin/noticias/nova">
+            <Link href="/admin/noticias/novo">
               <Newspaper className="h-4 w-4 mr-2" />
               Nova Notícia
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin/documentos/upload">
+            <Link href="/admin/documentos">
               <FileText className="h-4 w-4 mr-2" />
               Upload de Documento
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin/eventos/novo">
+            <Link href="/admin/eventos">
               <Calendar className="h-4 w-4 mr-2" />
               Novo Evento
             </Link>
@@ -193,33 +165,33 @@ export default function AdminDashboard() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentPosts.map((post) => (
-                  <div
-                    key={post.id}
-                    className="flex items-center justify-between py-3 border-b last:border-0"
-                  >
-                    <div className="flex-1 min-w-0 mr-4">
-                      <Link
-                        href={`/admin/noticias/${post.id}`}
-                        className="font-medium text-gray-900 hover:text-primary-600 truncate block"
-                      >
-                        {post.title}
-                      </Link>
-                      <p className="text-sm text-gray-500">{post.date}</p>
+              {stats.recent.posts.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Nenhuma notícia ainda</p>
+              ) : (
+                <div className="space-y-4">
+                  {stats.recent.posts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="flex items-center justify-between py-3 border-b last:border-0"
+                    >
+                      <div className="flex-1 min-w-0 mr-4">
+                        <Link
+                          href={`/admin/noticias/${post.id}`}
+                          className="font-medium text-gray-900 hover:text-primary-600 truncate block"
+                        >
+                          {post.title}
+                        </Link>
+                        <p className="text-sm text-gray-500">
+                          {post.author.name} • {formatDate(post.createdAt)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {getStatusBadge(post.status)}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {post.views > 0 && (
-                        <span className="text-sm text-gray-500 flex items-center gap-1">
-                          <Eye className="h-3.5 w-3.5" />
-                          {post.views}
-                        </span>
-                      )}
-                      {getStatusBadge(post.status)}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -232,45 +204,65 @@ export default function AdminDashboard() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentDocuments.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between py-3 border-b last:border-0"
-                  >
-                    <div className="flex-1 min-w-0 mr-4">
-                      <Link
-                        href={`/admin/documentos/${doc.id}`}
-                        className="font-medium text-gray-900 hover:text-primary-600 truncate block"
-                      >
-                        {doc.title}
-                      </Link>
-                      <Badge variant="outline" className="mt-1 text-xs">
-                        {doc.type}
-                      </Badge>
+              {stats.recent.documents.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Nenhum documento ainda</p>
+              ) : (
+                <div className="space-y-4">
+                  {stats.recent.documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between py-3 border-b last:border-0"
+                    >
+                      <div className="flex-1 min-w-0 mr-4">
+                        <Link
+                          href={`/admin/documentos`}
+                          className="font-medium text-gray-900 hover:text-primary-600 truncate block"
+                        >
+                          {doc.title}
+                        </Link>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {doc.type}
+                          </Badge>
+                          <span className="text-sm text-gray-500">
+                            {formatDate(doc.createdAt)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-sm text-gray-500 flex items-center gap-1">
-                      <Download className="h-3.5 w-3.5" />
-                      {doc.downloads}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Activity / Chart placeholder */}
+        {/* Summary Card */}
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary-600" />
-              Visitas do Portal
+              Resumo do Sistema
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg flex items-center justify-center">
-              <p className="text-primary-600 text-sm">Gráfico de visitas</p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900">{stats.users.active}</div>
+                <div className="text-sm text-gray-500">Usuários ativos</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900">{stats.posts.draft}</div>
+                <div className="text-sm text-gray-500">Rascunhos</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900">{stats.posts.review}</div>
+                <div className="text-sm text-gray-500">Em revisão</div>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900">{stats.contact.unread}</div>
+                <div className="text-sm text-gray-500">Mensagens não lidas</div>
+              </div>
             </div>
           </CardContent>
         </Card>
