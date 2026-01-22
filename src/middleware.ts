@@ -44,9 +44,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // Verificar token para rotas protegidas
+  // Em produção com HTTPS, NextAuth usa prefixo __Secure-
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: process.env.NODE_ENV === 'production'
+      ? '__Secure-next-auth.session-token'
+      : 'next-auth.session-token',
   })
 
   // Se não tem token e está tentando acessar /admin ou API protegida
