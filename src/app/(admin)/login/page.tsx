@@ -34,8 +34,8 @@ export default function LoginPage() {
       if (result?.error) {
         setError(result.error)
       } else if (result?.ok) {
-        router.push('/admin')
-        router.refresh()
+        // Força reload completo para garantir que cookies sejam lidos
+        window.location.href = '/admin'
       } else {
         setError('Erro desconhecido ao fazer login')
       }
