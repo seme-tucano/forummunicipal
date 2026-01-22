@@ -29,13 +29,18 @@ export default function LoginPage() {
         redirect: false,
       })
 
+      console.log('Login result:', result)
+
       if (result?.error) {
         setError(result.error)
-      } else {
+      } else if (result?.ok) {
         router.push('/admin')
         router.refresh()
+      } else {
+        setError('Erro desconhecido ao fazer login')
       }
     } catch (err) {
+      console.error('Login error:', err)
       setError('Ocorreu um erro ao fazer login')
     } finally {
       setLoading(false)

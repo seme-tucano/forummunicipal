@@ -1,8 +1,6 @@
-import { writeFile, mkdir, unlink } from 'fs/promises'
-import path from 'path'
 import crypto from 'crypto'
-
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads')
+import path from 'path'
+import { getSupabaseAdmin, STORAGE_BUCKETS, getPublicUrl } from './supabase'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
@@ -82,7 +80,14 @@ export function generateFileName(originalName: string, mimeType: string): string
 }
 
 /**
- * Salva um arquivo no sistema de arquivos
+ * Obtém o bucket correspondente ao tipo de upload
+ */
+function getBucket(type: UploadType): string {
+  return type === 'documents' ? STORAGE_BUCKETS.DOCUMENTS : STORAGE_BUCKETS.IMAGES
+}
+
+/**
+ * Salva um arquivo no Supabase Storage
  */
 export async function saveFile(
   file: File,
@@ -105,43 +110,76 @@ export async function saveFile(
   }
 
   try {
-    // Criar diretório se não existir
-    const uploadPath = path.join(UPLOAD_DIR, type)
-    await mkdir(uploadPath, { recursive: true })
-
-    // Gerar nome único
+    const bucket = getBucket(type)
     const fileName = generateFileName(file.name, file.type)
-    const filePath = path.join(uploadPath, fileName)
 
-    // Salvar arquivo
+    // Organizar por ano/mês
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const filePath = `${year}/${month}/${fileName}`
+
+    // Converter File para ArrayBuffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
 
-    // Retornar resultado
+    // Upload para Supabase Storage
+    const { data, error } = await getSupabaseAdmin().storage
+      .from(bucket)
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: false,
+      })
+
+    if (error) {
+      console.error('Supabase storage error:', error)
+      throw new UploadError('Erro ao salvar arquivo no storage', 'UPLOAD_FAILED')
+    }
+
+    // Obter URL pública
+    const url = getPublicUrl(bucket, data.path)
+
     return {
-      url: `/uploads/${type}/${fileName}`,
+      url,
       fileName,
       fileSize: file.size,
       mimeType: file.type,
     }
   } catch (error) {
+    if (error instanceof UploadError) {
+      throw error
+    }
     console.error('Error saving file:', error)
     throw new UploadError('Erro ao salvar arquivo', 'UPLOAD_FAILED')
   }
 }
 
 /**
- * Remove um arquivo do sistema de arquivos
+ * Remove um arquivo do Supabase Storage
  */
 export async function deleteFile(url: string): Promise<void> {
   try {
-    // Extrair caminho do arquivo a partir da URL
-    const relativePath = url.replace(/^\/uploads\//, '')
-    const filePath = path.join(UPLOAD_DIR, relativePath)
-    await unlink(filePath)
+    // Extrair bucket e path da URL
+    // URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
+    const urlObj = new URL(url)
+    const pathParts = urlObj.pathname.split('/storage/v1/object/public/')
+
+    if (pathParts.length < 2) {
+      console.warn('Invalid storage URL format:', url)
+      return
+    }
+
+    const [bucket, ...rest] = pathParts[1].split('/')
+    const filePath = rest.join('/')
+
+    const { error } = await getSupabaseAdmin().storage
+      .from(bucket)
+      .remove([filePath])
+
+    if (error) {
+      console.warn('Error deleting file from storage:', error)
+    }
   } catch (error) {
-    // Ignorar erro se arquivo não existir
     console.warn('Error deleting file:', error)
   }
 }

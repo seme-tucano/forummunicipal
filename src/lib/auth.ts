@@ -140,4 +140,6 @@ export const authOptions: NextAuthOptions = {
     maxAge: 4 * 60 * 60, // 4 horas (mais seguro que 24h)
   },
   secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
+  debug: process.env.NODE_ENV === 'development',
 }
