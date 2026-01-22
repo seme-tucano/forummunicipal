@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   ArrowRight,
   FileText,
@@ -12,39 +11,9 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-
-// Dados mockados para demonstração
-const featuredNews = [
-  {
-    id: '1',
-    title: 'Fórum aprova novas diretrizes para o Plano Municipal de Educação',
-    excerpt: 'Em reunião extraordinária, foram definidas as metas prioritárias para os próximos dois anos com foco na educação infantil e inclusão.',
-    category: 'Institucional',
-    date: '15 Jan 2026',
-    image: '/placeholder-news-1.jpg',
-    slug: 'forum-aprova-novas-diretrizes-pme',
-  },
-  {
-    id: '2',
-    title: 'Inscrições abertas para a Conferência Municipal de Educação',
-    excerpt: 'Evento acontece nos dias 25 e 26 de fevereiro e reunirá educadores, gestores e sociedade civil para debater o futuro da educação.',
-    category: 'Eventos',
-    date: '12 Jan 2026',
-    image: '/placeholder-news-2.jpg',
-    slug: 'inscricoes-conferencia-municipal',
-  },
-  {
-    id: '3',
-    title: 'Publicado relatório de acompanhamento das metas do PME',
-    excerpt: 'Documento apresenta análise detalhada do cumprimento das metas estabelecidas e propõe ações corretivas para o próximo período.',
-    category: 'Documentos',
-    date: '10 Jan 2026',
-    image: '/placeholder-news-3.jpg',
-    slug: 'relatorio-acompanhamento-metas-pme',
-  },
-]
+import prisma from '@/lib/prisma'
 
 const quickLinks = [
   {
@@ -77,24 +46,68 @@ const quickLinks = [
   },
 ]
 
-const upcomingEvents = [
-  {
-    id: '1',
-    title: 'Reunião Ordinária do Fórum',
-    date: '22 Jan 2026',
-    time: '14:00',
-    location: 'Auditório da Secretaria de Educação',
-  },
-  {
-    id: '2',
-    title: 'Conferência Municipal de Educação',
-    date: '25 Fev 2026',
-    time: '08:00',
-    location: 'Centro de Convenções',
-  },
-]
+async function getLatestNews() {
+  const posts = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+    },
+    orderBy: {
+      publishedAt: 'desc',
+    },
+    take: 3,
+    include: {
+      category: true,
+    },
+  })
+  return posts
+}
 
-export default function HomePage() {
+async function getUpcomingEvents() {
+  const events = await prisma.event.findMany({
+    where: {
+      published: true,
+      startDate: {
+        gte: new Date(),
+      },
+    },
+    orderBy: {
+      startDate: 'asc',
+    },
+    take: 3,
+  })
+  return events
+}
+
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function formatEventDate(date: Date) {
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(date)
+  const year = date.getFullYear()
+  return { day, month, year }
+}
+
+function formatTime(date: Date) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+export const revalidate = 60 // Revalidar a cada 60 segundos
+
+export default async function HomePage() {
+  const [latestNews, upcomingEvents] = await Promise.all([
+    getLatestNews(),
+    getUpcomingEvents(),
+  ])
+
   return (
     <>
       {/* Hero Section */}
@@ -254,33 +267,50 @@ export default function HomePage() {
             </Button>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {featuredNews.map((news, index) => (
-              <Link key={news.id} href={`/noticias/${news.slug}`} className="group">
-                <Card className="h-full overflow-hidden card-hover border-0 shadow-md">
-                  <div className="aspect-[16/10] bg-gradient-to-br from-primary-100 to-primary-200 relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Newspaper className="h-12 w-12 text-primary-400" />
+          {latestNews.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              {latestNews.map((news) => (
+                <Link key={news.id} href={`/noticias/${news.slug}`} className="group">
+                  <Card className="h-full overflow-hidden card-hover border-0 shadow-md">
+                    <div className="aspect-[16/10] bg-gradient-to-br from-primary-100 to-primary-200 relative overflow-hidden">
+                      {news.coverImage ? (
+                        <img
+                          src={news.coverImage}
+                          alt={news.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Newspaper className="h-12 w-12 text-primary-400" />
+                        </div>
+                      )}
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-white/90 text-primary-700 hover:bg-white">
+                          {news.category?.name || 'Notícia'}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="absolute top-4 left-4">
-                      <Badge className="bg-white/90 text-primary-700 hover:bg-white">
-                        {news.category}
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardContent className="p-6">
-                    <p className="text-sm text-gray-500 mb-2">{news.date}</p>
-                    <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
-                      {news.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {news.excerpt}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                    <CardContent className="p-6">
+                      <p className="text-sm text-gray-500 mb-2">
+                        {news.publishedAt ? formatDate(news.publishedAt) : formatDate(news.createdAt)}
+                      </p>
+                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
+                        {news.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {news.excerpt}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <Newspaper className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>Nenhuma notícia publicada ainda.</p>
+            </div>
+          )}
 
           <div className="mt-8 text-center md:hidden">
             <Button asChild variant="outline">
@@ -304,35 +334,49 @@ export default function HomePage() {
               </h2>
             </div>
 
-            <div className="space-y-4">
-              {upcomingEvents.map((event) => (
-                <Card key={event.id} className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
-                  <CardContent className="p-0">
-                    <div className="flex flex-col sm:flex-row">
-                      <div className="sm:w-32 bg-primary-600 text-white p-4 sm:p-6 flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-0">
-                        <span className="text-2xl sm:text-3xl font-bold">{event.date.split(' ')[0]}</span>
-                        <span className="text-sm uppercase">{event.date.split(' ')[1]} {event.date.split(' ')[2]}</span>
-                      </div>
-                      <div className="flex-1 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="font-semibold text-gray-900 mb-1">{event.title}</h3>
-                          <p className="text-sm text-gray-500">
-                            <span>{event.time}</span>
-                            <span className="mx-2">•</span>
-                            <span>{event.location}</span>
-                          </p>
+            {upcomingEvents.length > 0 ? (
+              <div className="space-y-4">
+                {upcomingEvents.map((event) => {
+                  const dateInfo = formatEventDate(event.startDate)
+                  return (
+                    <Card key={event.id} className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
+                      <CardContent className="p-0">
+                        <div className="flex flex-col sm:flex-row">
+                          <div className="sm:w-32 bg-primary-600 text-white p-4 sm:p-6 flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-0">
+                            <span className="text-2xl sm:text-3xl font-bold">{dateInfo.day}</span>
+                            <span className="text-sm uppercase">{dateInfo.month} {dateInfo.year}</span>
+                          </div>
+                          <div className="flex-1 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-1">{event.title}</h3>
+                              <p className="text-sm text-gray-500">
+                                <span>{formatTime(event.startDate)}</span>
+                                {event.location && (
+                                  <>
+                                    <span className="mx-2">•</span>
+                                    <span>{event.location}</span>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                            <Button asChild variant="outline" size="sm">
+                              <Link href="/agenda">
+                                Detalhes
+                              </Link>
+                            </Button>
+                          </div>
                         </div>
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/agenda`}>
-                            Detalhes
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Nenhum evento programado.</p>
+              </div>
+            )}
 
             <div className="mt-8 text-center">
               <Button asChild>
