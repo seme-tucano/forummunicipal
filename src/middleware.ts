@@ -31,7 +31,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/albums') ||
     pathname.startsWith('/api/categories') ||
     pathname.startsWith('/api/tags') ||
-    pathname.startsWith('/api/stats')
+    pathname.startsWith('/api/stats') ||
+    pathname.startsWith('/api/settings')
 
   // Se for GET em API pública, permitir
   if (isPublicApi && request.method === 'GET') {
@@ -101,5 +102,6 @@ export const config = {
     '/api/users/:path*',
     '/api/upload/:path*',
     '/api/stats/:path*',
+    '/api/settings/:path*',
   ],
 }
