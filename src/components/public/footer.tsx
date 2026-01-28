@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react'
+import prisma from '@/lib/prisma'
 
 const navigation = {
   principal: [
@@ -11,17 +12,34 @@ const navigation = {
   institucional: [
     { name: 'Agenda', href: '/agenda' },
     { name: 'Contato', href: '/contato' },
-    { name: 'Política de Privacidade', href: '/privacidade' },
-    { name: 'Área Restrita', href: '/admin' },
-  ],
-  social: [
-    { name: 'Facebook', href: '#', icon: Facebook },
-    { name: 'Instagram', href: '#', icon: Instagram },
-    { name: 'YouTube', href: '#', icon: Youtube },
+    { name: 'Área Restrita', href: '/login' },
   ],
 }
 
-export function Footer() {
+interface SocialLinks {
+  facebook?: string | null
+  instagram?: string | null
+  youtube?: string | null
+}
+
+async function getSettings() {
+  try {
+    const settings = await prisma.siteSettings.findUnique({
+      where: { id: 'main' }
+    })
+    return settings
+  } catch {
+    return null
+  }
+}
+
+export async function Footer() {
+  const settings = await getSettings()
+
+  const socialLinks = settings?.socialLinks as SocialLinks | null
+
+  const hasSocialLinks = socialLinks?.facebook || socialLinks?.instagram || socialLinks?.youtube
+
   return (
     <footer className="bg-primary-900 text-white" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">Rodapé</h2>
@@ -40,8 +58,8 @@ export function Footer() {
               </div>
             </div>
             <p className="text-sm text-primary-200 leading-relaxed">
-              Espaço de articulação entre a sociedade civil e o poder público para
-              discutir, propor e acompanhar as políticas educacionais do município.
+              {settings?.description ||
+                'Espaço de articulação entre a sociedade civil e o poder público para discutir, propor e acompanhar as políticas educacionais do município.'}
             </p>
           </div>
 
@@ -89,46 +107,81 @@ export function Footer() {
               Contato
             </h3>
             <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-sm text-primary-200">
-                <MapPin className="h-5 w-5 shrink-0 text-primary-400" />
-                <span>
-                  Rua da Educação, 123<br />
-                  Centro - CEP 00000-000
-                </span>
-              </li>
-              <li className="flex items-center gap-3 text-sm text-primary-200">
-                <Phone className="h-5 w-5 shrink-0 text-primary-400" />
-                <span>(00) 0000-0000</span>
-              </li>
-              <li className="flex items-center gap-3 text-sm text-primary-200">
-                <Mail className="h-5 w-5 shrink-0 text-primary-400" />
-                <span>contato@fme.edu.br</span>
-              </li>
+              {settings?.address && (
+                <li className="flex items-start gap-3 text-sm text-primary-200">
+                  <MapPin className="h-5 w-5 shrink-0 text-primary-400" />
+                  <span className="whitespace-pre-line">{settings.address}</span>
+                </li>
+              )}
+              {settings?.phone && (
+                <li className="flex items-center gap-3 text-sm text-primary-200">
+                  <Phone className="h-5 w-5 shrink-0 text-primary-400" />
+                  <span>{settings.phone}</span>
+                </li>
+              )}
+              {settings?.contactEmail && (
+                <li className="flex items-center gap-3 text-sm text-primary-200">
+                  <Mail className="h-5 w-5 shrink-0 text-primary-400" />
+                  <a href={`mailto:${settings.contactEmail}`} className="hover:text-white transition-colors">
+                    {settings.contactEmail}
+                  </a>
+                </li>
+              )}
+              {!settings?.address && !settings?.phone && !settings?.contactEmail && (
+                <li className="text-sm text-primary-300">
+                  Configure as informações de contato no painel administrativo.
+                </li>
+              )}
             </ul>
 
             {/* Redes Sociais */}
-            <div className="mt-6">
-              <h4 className="text-sm font-semibold mb-3">Siga-nos</h4>
-              <div className="flex gap-3">
-                {navigation.social.map((item) => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-                    aria-label={item.name}
-                  >
-                    <item.icon className="h-5 w-5" />
-                  </a>
-                ))}
+            {hasSocialLinks && (
+              <div className="mt-6">
+                <h4 className="text-sm font-semibold mb-3">Siga-nos</h4>
+                <div className="flex gap-3">
+                  {socialLinks?.facebook && (
+                    <a
+                      href={socialLinks.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                      aria-label="Facebook"
+                    >
+                      <Facebook className="h-5 w-5" />
+                    </a>
+                  )}
+                  {socialLinks?.instagram && (
+                    <a
+                      href={socialLinks.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                      aria-label="Instagram"
+                    >
+                      <Instagram className="h-5 w-5" />
+                    </a>
+                  )}
+                  {socialLinks?.youtube && (
+                    <a
+                      href={socialLinks.youtube}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                      aria-label="YouTube"
+                    >
+                      <Youtube className="h-5 w-5" />
+                    </a>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-white/10">
           <p className="text-sm text-primary-300 text-center">
-            &copy; {new Date().getFullYear()} Fórum Municipal da Educação. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} {settings?.siteName || 'Fórum Municipal da Educação'}. Todos os direitos reservados.
           </p>
         </div>
       </div>
