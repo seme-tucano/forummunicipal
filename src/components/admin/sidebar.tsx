@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import {
   LayoutDashboard,
   Newspaper,
@@ -105,17 +106,17 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <Settings className="h-5 w-5 shrink-0" />
           {!collapsed && <span>Configurações</span>}
         </Link>
-        <Link
-          href="/"
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-primary-200 hover:bg-white/10 hover:text-white transition-colors',
+            'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-primary-200 hover:bg-white/10 hover:text-white transition-colors w-full',
             collapsed && 'justify-center px-2'
           )}
           title={collapsed ? 'Sair' : undefined}
         >
           <LogOut className="h-5 w-5 shrink-0" />
           {!collapsed && <span>Sair</span>}
-        </Link>
+        </button>
       </div>
     </aside>
   )
