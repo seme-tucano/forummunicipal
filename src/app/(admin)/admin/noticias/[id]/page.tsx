@@ -92,11 +92,11 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
       const slug = value
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/--+/g, '-')
-        .trim()
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^a-z0-9\s-]/g, '')    // Remove caracteres especiais (só permite a-z, 0-9, espaço e hífen)
+        .replace(/\s+/g, '-')             // Espaços viram hífens
+        .replace(/-+/g, '-')              // Múltiplos hífens viram um só
+        .replace(/^-|-$/g, '')            // Remove hífens do início e fim
       setFormData((prev) => ({ ...prev, slug }))
     }
   }
