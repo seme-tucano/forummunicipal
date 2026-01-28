@@ -25,7 +25,7 @@ const optionalUrl = z.preprocess(
 export const postCreateSchema = z.object({
   title: z
     .string()
-    .min(5, 'Título deve ter pelo menos 5 caracteres')
+    .min(3, 'Título deve ter pelo menos 3 caracteres')
     .max(200, 'Título deve ter no máximo 200 caracteres'),
   slug: z
     .string()
@@ -34,11 +34,11 @@ export const postCreateSchema = z.object({
     .regex(slugRegex, 'Slug deve conter apenas letras minúsculas, números e hífens'),
   excerpt: z
     .string()
-    .min(10, 'Resumo deve ter pelo menos 10 caracteres')
+    .min(5, 'Resumo deve ter pelo menos 5 caracteres')
     .max(500, 'Resumo deve ter no máximo 500 caracteres'),
   content: z
     .string()
-    .min(20, 'Conteúdo deve ter pelo menos 20 caracteres'),
+    .min(10, 'Conteúdo deve ter pelo menos 10 caracteres'),
   coverImage: optionalUrl,
   categoryId: optionalCuid,
   tags: z.array(z.string().cuid('ID de tag inválido')).optional(),
