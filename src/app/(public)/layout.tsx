@@ -1,5 +1,8 @@
 import { Header, Footer } from '@/components/public'
 
+// Revalidar a cada 60 segundos para atualizar dados do rodapé
+export const revalidate = 60
+
 export default function PublicLayout({
   children,
 }: {
