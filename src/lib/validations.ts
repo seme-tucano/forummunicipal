@@ -10,6 +10,23 @@ const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 // POSTS / NOTÍCIAS
 // ============================================
 
+// Helper para transformar string vazia em null
+const emptyToNull = z.string().transform(val => val === '' ? null : val)
+
+// Helper para ID opcional (aceita CUID, string vazia ou null)
+const optionalCuid = z.union([
+  z.string().cuid(),
+  z.literal(''),
+  z.null(),
+]).transform(val => val === '' ? null : val).nullable().optional()
+
+// Helper para URL opcional (aceita URL válida, string vazia ou null)
+const optionalUrl = z.union([
+  z.string().url(),
+  z.literal(''),
+  z.null(),
+]).transform(val => val === '' ? null : val).nullable().optional()
+
 export const postCreateSchema = z.object({
   title: z
     .string()
@@ -27,8 +44,8 @@ export const postCreateSchema = z.object({
   content: z
     .string()
     .min(20, 'Conteúdo deve ter pelo menos 20 caracteres'),
-  coverImage: z.string().url('URL da imagem inválida').optional().nullable(),
-  categoryId: z.string().cuid('ID de categoria inválido').optional().nullable(),
+  coverImage: optionalUrl,
+  categoryId: optionalCuid,
   tags: z.array(z.string().cuid('ID de tag inválido')).optional(),
   status: z.enum(['DRAFT', 'REVIEW', 'PUBLISHED', 'ARCHIVED']).optional(),
 })
@@ -64,7 +81,7 @@ export const documentCreateSchema = z.object({
     .max(2100, 'Ano deve ser menor que 2100')
     .optional()
     .nullable(),
-  categoryId: z.string().cuid('ID de categoria inválido').optional().nullable(),
+  categoryId: optionalCuid,
 })
 
 export const documentUpdateSchema = documentCreateSchema.partial()
@@ -159,7 +176,7 @@ export const albumCreateSchema = z.object({
     .max(100, 'Slug deve ter no máximo 100 caracteres')
     .regex(slugRegex, 'Slug deve conter apenas letras minúsculas, números e hífens'),
   description: z.string().max(500).optional().nullable(),
-  coverImage: z.string().url('URL da imagem inválida').optional().nullable(),
+  coverImage: optionalUrl,
 })
 
 export const albumUpdateSchema = albumCreateSchema.partial()
@@ -175,9 +192,9 @@ export const galleryImageCreateSchema = z.object({
   title: z.string().max(100).optional().nullable(),
   description: z.string().max(500).optional().nullable(),
   imageUrl: z.string().url('URL da imagem inválida'),
-  thumbnailUrl: z.string().url('URL do thumbnail inválida').optional().nullable(),
+  thumbnailUrl: optionalUrl,
   order: z.number().int().min(0).optional(),
-  albumId: z.string().cuid('ID do álbum inválido').optional().nullable(),
+  albumId: optionalCuid,
 })
 
 export const galleryImageUpdateSchema = galleryImageCreateSchema.partial()

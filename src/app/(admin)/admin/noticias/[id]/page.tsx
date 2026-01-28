@@ -132,7 +132,15 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
         router.push('/admin/noticias')
         router.refresh()
       } else {
-        alert(data.error || 'Erro ao salvar')
+        // Mostrar erros detalhados se disponíveis
+        if (data.errors) {
+          const errorMessages = Object.entries(data.errors)
+            .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+            .join('\n')
+          alert(`Erros de validação:\n${errorMessages}`)
+        } else {
+          alert(data.error || 'Erro ao salvar')
+        }
       }
     } catch (error) {
       console.error('Erro ao salvar:', error)
