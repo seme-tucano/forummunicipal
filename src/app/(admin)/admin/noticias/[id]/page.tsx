@@ -51,7 +51,7 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
 
   async function fetchCategories() {
     try {
-      const res = await fetch('/api/categories')
+      const res = await fetch('/api/categories', { credentials: 'include' })
       const data = await res.json()
       if (data.success) {
         setCategories(data.data)
@@ -63,7 +63,7 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
 
   async function fetchPost() {
     try {
-      const res = await fetch(`/api/posts/${id}`)
+      const res = await fetch(`/api/posts/${id}`, { credentials: 'include' })
       const data = await res.json()
       if (data.success) {
         const post = data.data
@@ -122,6 +122,7 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(payload),
       })
 
@@ -146,7 +147,7 @@ export default function EditNoticiaPage({ params }: { params: Promise<{ id: stri
 
     setSaving(true)
     try {
-      const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/posts/${id}`, { method: 'DELETE', credentials: 'include' })
       if (res.ok) {
         router.push('/admin/noticias')
         router.refresh()
