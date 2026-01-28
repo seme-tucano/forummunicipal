@@ -17,8 +17,16 @@ const optionalCuid = z.preprocess(
 ).optional()
 
 // Helper para URL opcional (aceita URL válida, string vazia, null ou undefined)
+// Auto-adiciona https:// se o usuário não incluiu protocolo
 const optionalUrl = z.preprocess(
-  (val) => (val === '' || val === undefined ? null : val),
+  (val) => {
+    if (val === '' || val === undefined || val === null) return null
+    // Se é uma string e não começa com http:// ou https://, adiciona https://
+    if (typeof val === 'string' && val.trim() !== '' && !val.match(/^https?:\/\//i)) {
+      return `https://${val}`
+    }
+    return val
+  },
   z.string().url().nullable()
 ).optional()
 

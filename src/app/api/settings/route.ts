@@ -44,6 +44,9 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
 
+    // Debug: ver o que está chegando
+    console.log('Settings PUT - body recebido:', JSON.stringify(body, null, 2))
+
     // Validar dados
     const validationResult = siteSettingsSchema.safeParse(body)
     if (!validationResult.success) {
@@ -59,10 +62,17 @@ export async function PUT(request: NextRequest) {
 
     const data = validationResult.data
 
+    // Debug: ver dados após validação
+    console.log('Settings PUT - dados validados:', JSON.stringify(data, null, 2))
+    console.log('Settings PUT - socialLinks recebido:', JSON.stringify(body.socialLinks, null, 2))
+    console.log('Settings PUT - socialLinks validado:', JSON.stringify(data.socialLinks, null, 2))
+
     // Preparar socialLinks para o Prisma (null precisa ser Prisma.JsonNull)
     const socialLinksData = data.socialLinks
       ? (data.socialLinks as Prisma.InputJsonValue)
       : Prisma.JsonNull
+
+    console.log('Settings PUT - socialLinksData para Prisma:', JSON.stringify(socialLinksData, null, 2))
 
     // Atualizar ou criar configurações
     const settings = await prisma.siteSettings.upsert({
