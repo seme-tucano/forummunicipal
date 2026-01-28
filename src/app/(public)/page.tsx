@@ -125,7 +125,7 @@ export default async function HomePage() {
               <Badge className="mb-6 bg-white/20 text-white border-white/30 hover:bg-white/30">
                 Bem-vindo ao Portal
               </Badge>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-balance">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-balance text-white">
                 Fórum Municipal da Educação
               </h1>
               <p className="text-lg md:text-xl text-primary-100 mb-8 leading-relaxed max-w-2xl">
