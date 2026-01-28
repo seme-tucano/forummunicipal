@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { requireAdmin } from '@/lib/api-auth'
 import { siteSettingsSchema } from '@/lib/validations'
 
@@ -58,6 +59,11 @@ export async function PUT(request: NextRequest) {
 
     const data = validationResult.data
 
+    // Preparar socialLinks para o Prisma (null precisa ser Prisma.JsonNull)
+    const socialLinksData = data.socialLinks
+      ? (data.socialLinks as Prisma.InputJsonValue)
+      : Prisma.JsonNull
+
     // Atualizar ou criar configurações
     const settings = await prisma.siteSettings.upsert({
       where: { id: 'main' },
@@ -66,7 +72,7 @@ export async function PUT(request: NextRequest) {
         description: data.description,
         logo: data.logo,
         favicon: data.favicon,
-        socialLinks: data.socialLinks,
+        socialLinks: socialLinksData,
         contactEmail: data.contactEmail,
         address: data.address,
         phone: data.phone,
@@ -77,7 +83,7 @@ export async function PUT(request: NextRequest) {
         description: data.description,
         logo: data.logo,
         favicon: data.favicon,
-        socialLinks: data.socialLinks,
+        socialLinks: socialLinksData,
         contactEmail: data.contactEmail,
         address: data.address,
         phone: data.phone,
