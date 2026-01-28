@@ -269,23 +269,35 @@ export type ContactInput = z.infer<typeof contactSchema>
 // CONFIGURAÇÕES DO SITE
 // ============================================
 
+// Helper para email opcional
+const optionalEmail = z.preprocess(
+  (val) => (val === '' || val === undefined ? null : val),
+  z.string().email().nullable()
+).optional()
+
+// Helper para string opcional
+const optionalString = z.preprocess(
+  (val) => (val === '' || val === undefined ? null : val),
+  z.string().nullable()
+).optional()
+
 export const siteSettingsSchema = z.object({
   siteName: z.string().min(1).max(100).optional(),
-  description: z.string().max(500).optional().nullable(),
-  logo: z.string().url().optional().nullable(),
-  favicon: z.string().url().optional().nullable(),
+  description: optionalString,
+  logo: optionalUrl,
+  favicon: optionalUrl,
   socialLinks: z
     .object({
-      facebook: z.string().url().optional().nullable(),
-      instagram: z.string().url().optional().nullable(),
-      youtube: z.string().url().optional().nullable(),
-      twitter: z.string().url().optional().nullable(),
+      facebook: optionalUrl,
+      instagram: optionalUrl,
+      youtube: optionalUrl,
+      twitter: optionalUrl,
     })
     .optional()
     .nullable(),
-  contactEmail: z.string().email().optional().nullable(),
-  address: z.string().max(500).optional().nullable(),
-  phone: z.string().max(20).optional().nullable(),
+  contactEmail: optionalEmail,
+  address: optionalString,
+  phone: optionalString,
 })
 
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>
