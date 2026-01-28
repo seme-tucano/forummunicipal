@@ -1,72 +1,77 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { ArrowLeft, Calendar, User, Tag, Share2, Facebook, Twitter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import prisma from '@/lib/prisma'
 
-// Dados mockados
-const post = {
-  id: '1',
-  title: 'Fórum aprova novas diretrizes para o Plano Municipal de Educação',
-  excerpt: 'Em reunião extraordinária realizada nesta semana, foram definidas as metas prioritárias para os próximos dois anos com foco na educação infantil e inclusão.',
-  content: `
-    <p>O Fórum Municipal da Educação realizou nesta quinta-feira (15) uma reunião extraordinária para discutir e aprovar as novas diretrizes do Plano Municipal de Educação (PME) para o biênio 2026-2028.</p>
-
-    <p>Durante o encontro, que contou com a participação de representantes de diversos segmentos da comunidade educacional, foram definidas as metas prioritárias com foco especial na educação infantil e na inclusão de estudantes com deficiência.</p>
-
-    <h2>Principais deliberações</h2>
-
-    <p>Entre as principais deliberações da reunião, destacam-se:</p>
-
-    <ul>
-      <li>Ampliação de vagas na educação infantil, com meta de atendimento de 100% da demanda manifesta até 2028;</li>
-      <li>Implementação de programa de formação continuada para professores da rede municipal;</li>
-      <li>Criação de comissão especial para acompanhamento das políticas de inclusão;</li>
-      <li>Estabelecimento de indicadores de qualidade para monitoramento das metas do PME.</li>
-    </ul>
-
-    <h2>Participação social</h2>
-
-    <p>A presidente do Fórum, Maria Silva, destacou a importância da participação social na construção das políticas educacionais: "Este é um momento histórico para a educação do nosso município. As diretrizes aprovadas hoje são fruto de um amplo processo de discussão com a sociedade civil, educadores e gestores públicos".</p>
-
-    <blockquote>
-      "A educação de qualidade é um direito de todos e um dever do Estado. O Fórum Municipal da Educação tem o compromisso de zelar pelo cumprimento desse direito."
-    </blockquote>
-
-    <h2>Próximos passos</h2>
-
-    <p>As novas diretrizes serão encaminhadas à Secretaria Municipal de Educação para implementação. O Fórum acompanhará o processo e realizará avaliações periódicas do cumprimento das metas estabelecidas.</p>
-
-    <p>A próxima reunião ordinária do Fórum está agendada para o dia 30 de janeiro, quando serão discutidos os indicadores de acompanhamento do PME.</p>
-  `,
-  category: { name: 'Institucional', slug: 'institucional' },
-  tags: [
-    { name: 'PME', slug: 'pme' },
-    { name: 'Diretrizes', slug: 'diretrizes' },
-    { name: 'Educação Infantil', slug: 'educacao-infantil' },
-  ],
-  author: { name: 'Equipe de Comunicação' },
-  publishedAt: '15 de janeiro de 2026',
-  readTime: '4 min de leitura',
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
 }
 
-const relatedPosts = [
-  {
-    id: '2',
-    title: 'Publicado relatório de acompanhamento das metas do PME',
-    date: '10 Jan 2026',
-    slug: 'relatorio-acompanhamento-metas-pme',
-  },
-  {
-    id: '3',
-    title: 'Nova composição do Fórum toma posse para biênio 2026-2028',
-    date: '05 Jan 2026',
-    slug: 'nova-composicao-forum-2026-2028',
-  },
-]
+function calculateReadTime(content: string) {
+  const wordsPerMinute = 200
+  const words = content.replace(/<[^>]*>/g, '').split(/\s+/).length
+  const minutes = Math.ceil(words / wordsPerMinute)
+  return `${minutes} min de leitura`
+}
+
+async function getPost(slug: string) {
+  const post = await prisma.post.findUnique({
+    where: {
+      slug,
+      status: 'PUBLISHED'
+    },
+    include: {
+      author: {
+        select: { name: true }
+      },
+      category: {
+        select: { name: true, slug: true }
+      },
+      tags: {
+        include: {
+          tag: true
+        }
+      }
+    }
+  })
+  return post
+}
+
+async function getRelatedPosts(categoryId: string | null, currentPostId: string) {
+  const posts = await prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      id: { not: currentPostId },
+      ...(categoryId && { categoryId })
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      publishedAt: true
+    },
+    orderBy: { publishedAt: 'desc' },
+    take: 3
+  })
+  return posts
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const post = await getPost(slug)
+
+  if (!post) {
+    return {
+      title: 'Noticia nao encontrada'
+    }
+  }
+
   return {
     title: post.title,
     description: post.excerpt,
@@ -75,6 +80,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function NoticiaPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const post = await getPost(slug)
+
+  if (!post) {
+    notFound()
+  }
+
+  const relatedPosts = await getRelatedPosts(post.categoryId, post.id)
+  const readTime = calculateReadTime(post.content)
 
   return (
     <>
@@ -86,27 +99,29 @@ export default async function NoticiaPage({ params }: { params: Promise<{ slug: 
             className="inline-flex items-center text-primary-200 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para notícias
+            Voltar para noticias
           </Link>
 
-          <Badge className="mb-4 bg-white/20 text-white border-white/30">
-            {post.category.name}
-          </Badge>
+          {post.category && (
+            <Badge className="mb-4 bg-white/20 text-white border-white/30">
+              {post.category.name}
+            </Badge>
+          )}
 
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 max-w-4xl">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 max-w-4xl text-white">
             {post.title}
           </h1>
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-primary-200">
             <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              {post.publishedAt}
+              {post.publishedAt ? formatDate(post.publishedAt) : formatDate(post.createdAt)}
             </span>
             <span className="flex items-center gap-2">
               <User className="h-4 w-4" />
               {post.author.name}
             </span>
-            <span>{post.readTime}</span>
+            <span>{readTime}</span>
           </div>
         </div>
       </section>
@@ -120,6 +135,17 @@ export default async function NoticiaPage({ params }: { params: Promise<{ slug: 
               {post.excerpt}
             </p>
 
+            {/* Cover Image */}
+            {post.coverImage && (
+              <div className="mb-8">
+                <img
+                  src={post.coverImage}
+                  alt={post.title}
+                  className="w-full rounded-lg"
+                />
+              </div>
+            )}
+
             {/* Article content */}
             <article
               className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-primary-600 prose-blockquote:border-primary-500 prose-blockquote:text-gray-600 prose-li:text-gray-600"
@@ -127,18 +153,20 @@ export default async function NoticiaPage({ params }: { params: Promise<{ slug: 
             />
 
             {/* Tags */}
-            <div className="mt-10 pt-6 border-t">
-              <div className="flex items-center gap-3 flex-wrap">
-                <Tag className="h-4 w-4 text-gray-400" />
-                {post.tags.map((tag) => (
-                  <Link key={tag.slug} href={`/noticias?tag=${tag.slug}`}>
-                    <Badge variant="secondary" className="hover:bg-primary-100">
-                      {tag.name}
-                    </Badge>
-                  </Link>
-                ))}
+            {post.tags.length > 0 && (
+              <div className="mt-10 pt-6 border-t">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Tag className="h-4 w-4 text-gray-400" />
+                  {post.tags.map((postTag) => (
+                    <Link key={postTag.tag.slug} href={`/noticias?tag=${postTag.tag.slug}`}>
+                      <Badge variant="secondary" className="hover:bg-primary-100">
+                        {postTag.tag.name}
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Share */}
             <div className="mt-8 p-6 bg-gray-50 rounded-xl">
@@ -164,27 +192,31 @@ export default async function NoticiaPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Related Posts */}
-      <section className="py-12 bg-gray-50">
-        <div className="container-custom">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Notícias Relacionadas</h2>
-            <div className="space-y-4">
-              {relatedPosts.map((related) => (
-                <Link
-                  key={related.id}
-                  href={`/noticias/${related.slug}`}
-                  className="block p-4 bg-white rounded-lg hover:shadow-md transition-shadow"
-                >
-                  <p className="text-sm text-gray-500 mb-1">{related.date}</p>
-                  <h3 className="font-medium text-gray-900 hover:text-primary-600">
-                    {related.title}
-                  </h3>
-                </Link>
-              ))}
+      {relatedPosts.length > 0 && (
+        <section className="py-12 bg-gray-50">
+          <div className="container-custom">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Noticias Relacionadas</h2>
+              <div className="space-y-4">
+                {relatedPosts.map((related) => (
+                  <Link
+                    key={related.id}
+                    href={`/noticias/${related.slug}`}
+                    className="block p-4 bg-white rounded-lg hover:shadow-md transition-shadow"
+                  >
+                    <p className="text-sm text-gray-500 mb-1">
+                      {related.publishedAt ? formatDate(related.publishedAt) : ''}
+                    </p>
+                    <h3 className="font-medium text-gray-900 hover:text-primary-600">
+                      {related.title}
+                    </h3>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </>
   )
 }
