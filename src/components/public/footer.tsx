@@ -185,6 +185,10 @@ export async function Footer() {
           <p className="text-sm text-primary-300 text-center">
             &copy; {new Date().getFullYear()} {settings?.siteName || 'Fórum Municipal da Educação'}. Todos os direitos reservados.
           </p>
+          {/* Debug - remover depois */}
+          <p className="text-xs text-primary-400 text-center mt-2">
+            v2 - Email: {settings?.contactEmail || 'não configurado'}
+          </p>
         </div>
       </div>
     </footer>
