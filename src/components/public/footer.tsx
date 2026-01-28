@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react'
 import prisma from '@/lib/prisma'
+import { unstable_noStore as noStore } from 'next/cache'
 
 const navigation = {
   principal: [
@@ -23,6 +24,7 @@ interface SocialLinks {
 }
 
 async function getSettings() {
+  noStore() // Força busca sem cache
   try {
     const settings = await prisma.siteSettings.findUnique({
       where: { id: 'main' }
