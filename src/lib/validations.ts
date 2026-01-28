@@ -10,22 +10,17 @@ const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 // POSTS / NOTÍCIAS
 // ============================================
 
-// Helper para transformar string vazia em null
-const emptyToNull = z.string().transform(val => val === '' ? null : val)
+// Helper para ID opcional (aceita CUID, string vazia, null ou undefined)
+const optionalCuid = z.preprocess(
+  (val) => (val === '' || val === undefined ? null : val),
+  z.string().cuid().nullable()
+).optional()
 
-// Helper para ID opcional (aceita CUID, string vazia ou null)
-const optionalCuid = z.union([
-  z.string().cuid(),
-  z.literal(''),
-  z.null(),
-]).transform(val => val === '' ? null : val).nullable().optional()
-
-// Helper para URL opcional (aceita URL válida, string vazia ou null)
-const optionalUrl = z.union([
-  z.string().url(),
-  z.literal(''),
-  z.null(),
-]).transform(val => val === '' ? null : val).nullable().optional()
+// Helper para URL opcional (aceita URL válida, string vazia, null ou undefined)
+const optionalUrl = z.preprocess(
+  (val) => (val === '' || val === undefined ? null : val),
+  z.string().url().nullable()
+).optional()
 
 export const postCreateSchema = z.object({
   title: z

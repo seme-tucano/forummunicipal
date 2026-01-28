@@ -88,9 +88,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
+    // Log para debug
+    console.log('POST /api/posts - body recebido:', JSON.stringify(body, null, 2))
+
     // Validar dados de entrada
     const validationResult = postCreateSchema.safeParse(body)
     if (!validationResult.success) {
+      console.log('POST /api/posts - erros de validação:', JSON.stringify(validationResult.error.flatten(), null, 2))
       return NextResponse.json(
         {
           success: false,
