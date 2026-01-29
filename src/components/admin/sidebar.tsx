@@ -11,6 +11,7 @@ import {
   Calendar,
   FolderOpen,
   Users,
+  MessageSquare,
   Settings,
   LogOut,
   ChevronLeft,
@@ -27,6 +28,7 @@ const navigation = [
   { name: 'Eventos', href: '/admin/eventos', icon: Calendar },
   { name: 'Categorias', href: '/admin/categorias', icon: FolderOpen },
   { name: 'Usuários', href: '/admin/usuarios', icon: Users },
+  { name: 'Mensagens', href: '/admin/mensagens', icon: MessageSquare },
 ]
 
 interface SidebarProps {

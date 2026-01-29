@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input'
 interface AdminHeaderProps {
   title: string
   description?: string
+  actions?: React.ReactNode
 }
 
-export function AdminHeader({ title, description }: AdminHeaderProps) {
+export function AdminHeader({ title, description, actions }: AdminHeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-white border-b">
       <div className="flex h-16 items-center justify-between px-6">
@@ -19,6 +20,12 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
             <p className="text-sm text-gray-500">{description}</p>
           )}
         </div>
+
+        {actions && (
+          <div className="flex items-center gap-2">
+            {actions}
+          </div>
+        )}
 
         <div className="flex items-center gap-4">
           {/* Search */}
