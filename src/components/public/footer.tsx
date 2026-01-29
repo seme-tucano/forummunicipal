@@ -60,7 +60,7 @@ export async function Footer() {
               </div>
             </div>
             <p className="text-sm text-primary-200 leading-relaxed">
-              {settings?.description ||
+              {settings?.footerDescription ||
                 'Espaço de articulação entre a sociedade civil e o poder público para discutir, propor e acompanhar as políticas educacionais do município.'}
             </p>
           </div>

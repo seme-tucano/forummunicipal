@@ -292,6 +292,7 @@ const optionalString = z.preprocess(
 export const siteSettingsSchema = z.object({
   siteName: z.string().min(1).max(100).optional(),
   description: optionalString,
+  footerDescription: optionalString,
   logo: optionalUrl,
   favicon: optionalUrl,
   socialLinks: z

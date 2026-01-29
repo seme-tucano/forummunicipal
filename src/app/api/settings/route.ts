@@ -80,6 +80,7 @@ export async function PUT(request: NextRequest) {
       update: {
         siteName: data.siteName,
         description: data.description,
+        footerDescription: data.footerDescription,
         logo: data.logo,
         favicon: data.favicon,
         socialLinks: socialLinksData,
@@ -91,6 +92,7 @@ export async function PUT(request: NextRequest) {
         id: 'main',
         siteName: data.siteName || 'Fórum Municipal da Educação',
         description: data.description,
+        footerDescription: data.footerDescription,
         logo: data.logo,
         favicon: data.favicon,
         socialLinks: socialLinksData,

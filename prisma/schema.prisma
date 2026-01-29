@@ -227,16 +227,17 @@ model Event {
 // ============================================
 
 model SiteSettings {
-  id           String   @id @default("main")
-  siteName     String   @default("Fórum Municipal da Educação")
-  description  String?
-  logo         String?
-  favicon      String?
-  socialLinks  Json?    // {facebook, instagram, youtube}
-  contactEmail String?
-  address      String?
-  phone        String?
-  updatedAt    DateTime @updatedAt
+  id                String   @id @default("main")
+  siteName          String   @default("Fórum Municipal da Educação")
+  description       String?
+  footerDescription String?  @db.Text // Descrição exibida no rodapé do site
+  logo              String?
+  favicon           String?
+  socialLinks       Json?    // {facebook, instagram, youtube}
+  contactEmail      String?
+  address           String?
+  phone             String?
+  updatedAt         DateTime @updatedAt
 
   @@map("site_settings")
 }

@@ -30,6 +30,7 @@ interface SiteSettings {
   id: string
   siteName: string
   description: string | null
+  footerDescription: string | null
   logo: string | null
   favicon: string | null
   socialLinks: SocialLinks | null
@@ -46,6 +47,7 @@ export default function ConfiguracoesPage() {
   const [formData, setFormData] = useState({
     siteName: '',
     description: '',
+    footerDescription: '',
     logo: '',
     favicon: '',
     contactEmail: '',
@@ -70,6 +72,7 @@ export default function ConfiguracoesPage() {
         setFormData({
           siteName: settings.siteName || '',
           description: settings.description || '',
+          footerDescription: settings.footerDescription || '',
           logo: settings.logo || '',
           favicon: settings.favicon || '',
           contactEmail: settings.contactEmail || '',
@@ -101,6 +104,7 @@ export default function ConfiguracoesPage() {
       const payload = {
         siteName: formData.siteName || undefined,
         description: formData.description || null,
+        footerDescription: formData.footerDescription || null,
         logo: formData.logo || null,
         favicon: formData.favicon || null,
         contactEmail: formData.contactEmail || null,
@@ -189,7 +193,7 @@ export default function ConfiguracoesPage() {
               </div>
               <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                  Descrição
+                  Descrição SEO
                 </label>
                 <Textarea
                   id="description"
@@ -201,6 +205,22 @@ export default function ConfiguracoesPage() {
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Aparece nos resultados de busca do Google
+                </p>
+              </div>
+              <div>
+                <label htmlFor="footerDescription" className="block text-sm font-medium text-gray-700 mb-2">
+                  Descrição do Rodapé
+                </label>
+                <Textarea
+                  id="footerDescription"
+                  name="footerDescription"
+                  value={formData.footerDescription}
+                  onChange={handleChange}
+                  placeholder="Espaço de articulação entre a sociedade civil e o poder público..."
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Texto institucional exibido no rodapé do site
                 </p>
               </div>
             </CardContent>
