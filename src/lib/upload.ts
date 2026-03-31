@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import path from 'path'
-import { getSupabaseAdmin, STORAGE_BUCKETS, getPublicUrl } from './supabase'
+import { STORAGE_BUCKETS, getPublicUrl, uploadFile as storageUpload } from './storage'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
@@ -123,21 +123,15 @@ export async function saveFile(
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Upload para Supabase Storage
-    const { data, error } = await getSupabaseAdmin().storage
-      .from(bucket)
-      .upload(filePath, buffer, {
-        contentType: file.type,
-        upsert: false,
-      })
+    // Upload para R2 Storage
+    const result = await storageUpload(bucket, filePath, buffer, file.type)
 
-    if (error) {
-      console.error('Supabase storage error:', error)
+    if (!result) {
       throw new UploadError('Erro ao salvar arquivo no storage', 'UPLOAD_FAILED')
     }
 
     // Obter URL pública
-    const url = getPublicUrl(bucket, data.path)
+    const url = getPublicUrl(bucket, filePath)
 
     return {
       url,
@@ -159,26 +153,8 @@ export async function saveFile(
  */
 export async function deleteFile(url: string): Promise<void> {
   try {
-    // Extrair bucket e path da URL
-    // URL format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
-    const urlObj = new URL(url)
-    const pathParts = urlObj.pathname.split('/storage/v1/object/public/')
-
-    if (pathParts.length < 2) {
-      console.warn('Invalid storage URL format:', url)
-      return
-    }
-
-    const [bucket, ...rest] = pathParts[1].split('/')
-    const filePath = rest.join('/')
-
-    const { error } = await getSupabaseAdmin().storage
-      .from(bucket)
-      .remove([filePath])
-
-    if (error) {
-      console.warn('Error deleting file from storage:', error)
-    }
+    const { deleteStorageFile } = await import('./storage')
+    await deleteStorageFile(url)
   } catch (error) {
     console.warn('Error deleting file:', error)
   }
