@@ -1,0 +1,26 @@
+# Dependências e build — instaladas/geradas DENTRO da imagem (npm ci),
+# nunca copiadas do host (evita arrastar node_modules/.next desatualizados).
+# O client do Prisma é regenerado no build via `npx prisma generate`.
+node_modules
+.next
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Segredos
+.env
+.env.*
+
+# Artefatos de desenvolvimento
+*.log
+npm-debug.log*
+.DS_Store
+coverage
+.vscode
+.idea
+tsconfig.tsbuildinfo
