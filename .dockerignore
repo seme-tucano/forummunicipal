@@ -1,0 +1,25 @@
+# Dependências e build — devem ser instaladas/geradas DENTRO da imagem,
+# nunca copiadas do host (evita arrastar node_modules/.next desatualizados)
+node_modules
+.next
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Segredos — NUNCA copiar para a imagem (injetados via env_file no runtime)
+.env
+.env.*
+
+# Artefatos de desenvolvimento
+*.log
+npm-debug.log*
+.DS_Store
+coverage
+.vscode
+.idea
+tsconfig.tsbuildinfo
