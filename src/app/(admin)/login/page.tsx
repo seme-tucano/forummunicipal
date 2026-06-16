@@ -63,8 +63,8 @@ export default function LoginPage() {
           <CardContent className="p-8">
             {/* Logo */}
             <div className="text-center mb-8">
-              <div className="h-16 w-16 rounded-xl bg-primary-600 flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-2xl">FME</span>
+              <div className="h-16 w-16 rounded-xl bg-white flex items-center justify-center mx-auto mb-4 ring-1 ring-gray-200 shadow-sm overflow-hidden">
+                <img src="/fme-icon.png" alt="Fórum Municipal de Educação" className="h-14 w-14 object-contain" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Área Restrita</h1>
               <p className="text-gray-500 mt-1">Fórum Municipal da Educação</p>
