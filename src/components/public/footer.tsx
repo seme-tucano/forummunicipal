@@ -180,8 +180,16 @@ export async function Footer() {
           </div>
         </div>
 
-        {/* Bottom */}
+        {/* Frase de impacto */}
         <div className="mt-12 pt-8 border-t border-white/10">
+          <p className="text-base md:text-lg text-white font-medium text-center max-w-4xl mx-auto leading-relaxed">
+            &ldquo;Fortalecer o Fórum Municipal de Educação é fortalecer a participação social,
+            a transparência e o compromisso coletivo com o futuro da educação de Tucano.&rdquo;
+          </p>
+        </div>
+
+        {/* Bottom */}
+        <div className="mt-8 pt-8 border-t border-white/10">
           <p className="text-sm text-primary-300 text-center">
             &copy; {new Date().getFullYear()} {settings?.siteName || 'Fórum Municipal da Educação'}. Todos os direitos reservados.
           </p>

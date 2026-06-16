@@ -185,65 +185,65 @@ export default async function HomePage() {
       {/* About Section */}
       <section className="section-padding bg-gray-50">
         <div className="container-custom">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <Badge variant="outline" className="mb-4">Sobre o Fórum</Badge>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-                Construindo juntos o futuro da educação
-              </h2>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                O Fórum Municipal da Educação é um espaço permanente de debate e articulação,
-                composto por representantes da sociedade civil, gestores públicos, educadores
-                e demais atores envolvidos com a educação municipal.
-              </p>
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
-                    <Target className="h-5 w-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Nossa Missão</h4>
-                    <p className="text-sm text-gray-600">Coordenar e articular as políticas educacionais no âmbito municipal.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
-                    <Users className="h-5 w-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Participação Social</h4>
-                    <p className="text-sm text-gray-600">Garantir a participação da sociedade nas decisões sobre educação.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
-                    <BookOpen className="h-5 w-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Acompanhamento do PME</h4>
-                    <p className="text-sm text-gray-600">Monitorar e avaliar a implementação do Plano Municipal de Educação.</p>
-                  </div>
-                </div>
+          {/* Cabeçalho */}
+          <div className="max-w-3xl mb-12">
+            <Badge variant="outline" className="mb-4">Sobre o Fórum</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              Construindo juntos o futuro da educação
+            </h2>
+            <p className="text-gray-600 leading-relaxed">
+              O Fórum Municipal de Educação é um espaço permanente de debate e articulação,
+              composto por representantes da sociedade civil, gestores públicos, educadores
+              e demais atores envolvidos com a educação municipal.
+            </p>
+          </div>
+
+          {/* Missão em destaque */}
+          <div className="bg-white rounded-2xl shadow-md p-8 lg:p-10 mb-8 border-l-4 border-primary-600">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
+                <Target className="h-6 w-6 text-primary-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Nossa Missão</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Promover a gestão democrática da educação municipal, articulando o poder
+                  público e a sociedade civil na formulação, acompanhamento, avaliação e
+                  fortalecimento das políticas educacionais, contribuindo para a garantia do
+                  direito à educação com qualidade, equidade, inclusão e participação social.
+                </p>
               </div>
             </div>
-            <div className="relative">
-              <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="h-24 w-24 mx-auto rounded-full bg-primary-500 flex items-center justify-center mb-4">
-                      <Users className="h-12 w-12 text-white" />
-                    </div>
-                    <p className="text-primary-700 font-medium">
-                      Imagem institucional
-                    </p>
-                  </div>
-                </div>
+          </div>
+
+          {/* Pilares */}
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+            <div className="bg-white rounded-2xl shadow-md p-8 h-full">
+              <div className="h-12 w-12 rounded-lg bg-primary-100 flex items-center justify-center mb-5">
+                <Users className="h-6 w-6 text-primary-600" />
               </div>
-              {/* Stats card */}
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg p-6 max-w-[200px]">
-                <div className="text-3xl font-bold text-primary-600 mb-1">10+</div>
-                <div className="text-sm text-gray-600">Anos de atuação pela educação</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Participação Social</h3>
+              <p className="text-gray-600 leading-relaxed">
+                O Fórum Municipal de Educação constitui-se como espaço permanente de diálogo,
+                escuta, mobilização e participação democrática, reunindo representantes dos
+                diversos segmentos educacionais, conselhos, movimentos sociais, instituições
+                públicas e comunidade em geral. Sua atuação fortalece o controle social das
+                políticas educacionais e amplia a participação da sociedade na construção das
+                decisões que impactam a educação do município.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl shadow-md p-8 h-full">
+              <div className="h-12 w-12 rounded-lg bg-primary-100 flex items-center justify-center mb-5">
+                <BookOpen className="h-6 w-6 text-primary-600" />
               </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Acompanhamento do Plano Municipal de Educação (PME)</h3>
+              <p className="text-gray-600 leading-relaxed">
+                O Fórum Municipal de Educação é responsável por acompanhar, monitorar e avaliar
+                continuamente a execução do Plano Municipal de Educação, analisando o cumprimento
+                de suas metas e estratégias, promovendo debates, sistematizando informações,
+                divulgando resultados e propondo ações que contribuam para o avanço das políticas
+                educacionais e para a melhoria da qualidade da educação no município.
+              </p>
             </div>
           </div>
         </div>
