@@ -51,8 +51,8 @@ export async function Footer() {
           {/* Logo e descrição */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <span className="text-white font-bold text-lg">FME</span>
+              <div className="h-11 w-11 rounded-lg bg-white flex items-center justify-center shadow-sm overflow-hidden">
+                <img src="/fme-icon.png" alt="Fórum Municipal de Educação" className="h-10 w-10 object-contain" />
               </div>
               <div>
                 <span className="text-lg font-bold">Fórum Municipal</span>

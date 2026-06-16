@@ -50,8 +50,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
         {!collapsed && (
           <Link href="/admin" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">FME</span>
+            <div className="h-9 w-9 rounded-lg bg-white flex items-center justify-center shadow-sm overflow-hidden">
+              <img src="/fme-icon.png" alt="Fórum Municipal de Educação" className="h-8 w-8 object-contain" />
             </div>
             <span className="font-semibold">Admin</span>
           </Link>

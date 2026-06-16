@@ -25,8 +25,8 @@ export function Header() {
           {/* Logo */}
           <div className="flex lg:flex-1">
             <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center">
-                <span className="text-white font-bold text-lg">FME</span>
+              <div className="h-11 w-11 rounded-lg bg-white flex items-center justify-center ring-1 ring-gray-200 shadow-sm overflow-hidden">
+                <img src="/fme-icon.png" alt="Fórum Municipal de Educação" className="h-10 w-10 object-contain" />
               </div>
               <div className="hidden sm:block">
                 <span className="text-lg font-bold text-primary-700">Fórum Municipal</span>
@@ -89,8 +89,8 @@ export function Header() {
         )}>
           <div className="flex items-center justify-between p-6 border-b">
             <Link href="/" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
-              <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                <span className="text-white font-bold text-sm">FME</span>
+              <div className="h-9 w-9 rounded-lg bg-white flex items-center justify-center ring-1 ring-gray-200 shadow-sm overflow-hidden">
+                <img src="/fme-icon.png" alt="Fórum Municipal de Educação" className="h-8 w-8 object-contain" />
               </div>
               <span className="font-bold text-primary-700">Fórum Municipal</span>
             </Link>
