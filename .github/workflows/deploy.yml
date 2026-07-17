@@ -73,9 +73,19 @@ jobs:
             git remote set-url origin "https://github.com/seme-tucano/forummunicipal.git"
 
             # Pull da imagem pronta (build feito no Actions) e restart
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u github-actions --password-stdin
+            n=0
+            until echo "$GHCR_TOKEN" | docker login ghcr.io -u github-actions --password-stdin; do
+              n=$((n+1)); [ $n -ge 8 ] && { echo "docker login ghcr.io falhou após 8 tentativas"; exit 1; }
+              echo "login tentativa $n/8 falhou; retry em 6s..."; sleep 6
+            done
             cd "$DEPLOY_DIR"
-            docker compose pull
+            # Retry: o link da VPS (KingHost) às vezes derruba o pull; layers já
+            # baixadas ficam em cache e cada tentativa retoma de onde parou.
+            n=0
+            until docker compose pull; do
+              n=$((n+1)); [ $n -ge 8 ] && { echo "docker compose pull falhou após 8 tentativas"; exit 1; }
+              echo "pull tentativa $n/8 falhou; retry em 6s..."; sleep 6
+            done
             docker compose up -d
             docker logout ghcr.io
 
