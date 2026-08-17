@@ -61,7 +61,7 @@ jobs:
           script: |
             set -e
 
-            DEPLOY_DIR="/home/seme/forummunicipal"
+            DEPLOY_DIR="/home/seme/prod/forummunicipal"
             echo ">>> DEPLOY PRODUÇÃO — forummunicipal"
 
             # Sincroniza o código-fonte (referência local; build é feito no Actions)
